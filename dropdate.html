@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>dropdate · skapida</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:system-ui,-apple-system,sans-serif;background:#f8f9fb;min-height:100vh;max-width:480px;margin:0 auto}
+  button,select,input,textarea{font-family:inherit}
+  input[type=number]::-webkit-inner-spin-button{opacity:1}
+
+  /* Header */
+  .header{background:#1c1c1e;color:#fff;padding:28px 20px 22px}
+  .header-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2px}
+  .logo{display:flex;align-items:baseline;gap:1px}
+  .logo-drop{font-weight:900;font-size:28px;letter-spacing:-1px}
+  .logo-date{font-weight:900;font-size:28px;letter-spacing:-1px;color:#ea580c}
+  .logo-sub{font-size:10px;color:#6b7280;margin-left:6px;letter-spacing:1px;text-transform:uppercase;align-self:center}
+  .header-actions{display:flex;align-items:center;gap:10px;padding-top:6px}
+  .save-status{font-size:11px;min-width:52px;text-align:right;transition:color .3s}
+  .menu-btn{background:rgba(255,255,255,.1);border:none;border-radius:8px;color:#fff;padding:6px 12px;cursor:pointer;font-size:15px;font-weight:700}
+  .header-date{font-size:13px;color:#9ca3af;margin-bottom:18px}
+  .stats-row{display:flex;gap:10px}
+  .stat-box{background:rgba(255,255,255,.06);border-radius:12px;padding:12px 0;flex:1;text-align:center}
+  .stat-val{font-weight:900;font-size:24px}
+  .stat-label{font-size:10px;color:#6b7280;letter-spacing:1px}
+
+  /* Body */
+  .body{padding:20px 16px 100px}
+
+  /* Filter pills */
+  .pills{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+  .pills::-webkit-scrollbar{display:none}
+  .pill{background:#fff;color:#6b7280;border:1.5px solid #e5e7eb;border-radius:99px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0}
+  .pill.active{background:#1c1c1e;color:#fff;border-color:#1c1c1e}
+
+  /* Sort row */
+  .sort-row{display:flex;gap:6px;margin-bottom:16px;align-items:center;flex-wrap:wrap}
+  .sort-label{font-size:11px;color:#9ca3af;font-weight:600;white-space:nowrap}
+  .mini-select{padding:5px 8px;border-radius:8px;border:1.5px solid #e5e7eb;font-size:12px;background:#fff;color:#374151;cursor:pointer}
+
+  /* Cards */
+  .card{background:#fff;border-radius:14px;border:1.5px solid #e5e7eb;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+  .card-header{padding:14px 16px;cursor:pointer}
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
+  .card-name{font-weight:800;font-size:15px;margin-bottom:4px}
+  .card-meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .card-price{text-align:right;flex-shrink:0}
+  .card-price-main{font-weight:900;font-size:18px}
+  .card-price-was{font-size:11px;color:#9ca3af}
+  .card-chevron{font-size:11px;color:#9ca3af;margin-top:2px}
+  .drop-pill{border-radius:8px;padding:7px 12px;display:flex;justify-content:space-between;align-items:center}
+  .drop-pill-label{font-size:12px;font-weight:600}
+  .drop-pill-date{font-size:11px;color:#9ca3af}
+
+  /* Card body */
+  .card-body{border-top:1px solid #f3f4f6;padding:14px 16px;background:#fafafa}
+  .mini-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+  .mini-stat{text-align:center;background:#fff;border-radius:10px;padding:10px 4px;border:1px solid #e5e7eb}
+  .mini-stat-label{font-size:9px;color:#9ca3af;margin-bottom:3px;letter-spacing:.5px;text-transform:uppercase}
+  .mini-stat-val{font-weight:800;font-size:12px}
+
+  /* Badges */
+  .badge{padding:2px 10px;border-radius:99px;font-size:12px;font-weight:700;display:inline-block}
+  .plat-tag{font-size:11px;background:#f3f4f6;color:#374151;padding:2px 8px;border-radius:99px;font-weight:600}
+
+  /* Section titles */
+  .sec-title{font-size:11px;font-weight:700;color:#9ca3af;margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase}
+
+  /* Buttons */
+  .btn{border:none;border-radius:10px;padding:10px 14px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+  .btn-dark{background:#1c1c1e;color:#fff}
+  .btn-grey{background:#f3f4f6;color:#374151}
+  .btn-orange{background:#ea580c;color:#fff}
+  .btn-purple{background:#7e22ce;color:#fff}
+  .btn-red{background:#dc2626;color:#fff}
+  .btn-full{width:100%}
+  .btn-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+  /* FAB */
+  .fab{position:fixed;bottom:28px;right:20px;background:#ea580c;color:#fff;border:none;border-radius:99px;width:58px;height:58px;font-size:28px;cursor:pointer;box-shadow:0 4px 24px rgba(234,88,12,.4);display:flex;align-items:center;justify-content:center;z-index:10}
+
+  /* Empty state */
+  .empty{text-align:center;padding:60px 20px;color:#9ca3af}
+  .empty-icon{font-size:44px;margin-bottom:12px}
+  .empty-title{font-weight:700;font-size:16px;margin-bottom:4px}
+
+  /* Sheet (bottom modal) */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:flex;align-items:flex-end;justify-content:center}
+  .sheet{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:500px;max-height:92vh;overflow-y:auto;padding:24px 20px 44px}
+  .sheet-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+  .sheet-title{font-weight:900;font-size:17px}
+  .sheet-sub{font-size:12px;color:#9ca3af;margin-top:2px}
+  .close-btn{background:#f3f4f6;border:none;border-radius:99px;width:32px;height:32px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+
+  /* Form */
+  .field{margin-bottom:12px}
+  .field-label{font-size:11px;font-weight:700;color:#6b7280;margin-bottom:4px;letter-spacing:.5px;text-transform:uppercase}
+  .field input,.field select,.field textarea{width:100%;padding:9px 12px;border-radius:8px;border:1.5px solid #e5e7eb;font-size:14px;font-family:inherit;outline:none;background:#fafafa;box-sizing:border-box}
+  .field textarea{min-height:70px;resize:vertical}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+
+  /* Info box */
+  .info{border-radius:10px;padding:10px 14px;font-size:13px;line-height:1.5}
+
+  /* Banner */
+  .banner{border-radius:14px;padding:16px 20px;margin-bottom:10px}
+  .banner-title{font-weight:800;font-size:15px;margin-bottom:10px}
+  .banner-item{border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .banner-item-name{font-weight:700;font-size:14px}
+  .banner-item-sub{font-size:13px;margin-top:2px}
+  .banner-open{padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;flex-shrink:0;display:inline-block}
+
+  /* Action card */
+  .action-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:10px 14px;margin-bottom:8px}
+  .action-listing{font-size:11px;color:#9ca3af;margin-bottom:3px}
+  .action-label{font-size:13px;font-weight:600}
+  .action-impact{font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;flex-shrink:0}
+  .action-btns{display:flex;gap:8px;margin-top:10px}
+  .action-btn{flex:1;border-radius:8px;padding:7px;font-size:12px;font-weight:700;cursor:pointer;border:none;font-family:inherit}
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+// ── Data & Storage ────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'dropdate-v9';
+const MODEL = 'claude-sonnet-4-20250514';
+
+const PLATFORM_META = {
+  'Vinted':              {bg:'#e0f2fe',color:'#0369a1',icon:'👗'},
+  'Facebook Marketplace':{bg:'#eff6ff',color:'#1d4ed8',icon:'📘'},
+  'eBay':                {bg:'#fef3c7',color:'#b45309',icon:'🛒'},
+  'Aukro':               {bg:'#f0fdf4',color:'#166534',icon:'🔨'},
+  'Bazoš':               {bg:'#fdf4ff',color:'#7e22ce',icon:'📋'},
+};
+const STATUS_CFG = {
+  active:  {label:'Active',  bg:'#d1fae5',color:'#065f46'},
+  sold:    {label:'Sold',    bg:'#dbeafe',color:'#1e40af'},
+  archived:{label:'Archived',bg:'#f3f4f6',color:'#6b7280'},
+  pending: {label:'Pending', bg:'#fef3c7',color:'#92400e'},
+};
+
+function loadData() {
+  try { const r=localStorage.getItem(STORAGE_KEY); if(r){const p=JSON.parse(r);return Array.isArray(p)?p:(p.data||[]);} } catch{}
+  return [];
+}
+function saveData(listings) {
+  try { localStorage.setItem(STORAGE_KEY,JSON.stringify(listings)); } catch{}
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let state = {
+  listings: loadData(),
+  filter: 'all',
+  platformFilter: 'all',
+  sortBy: 'date-desc',
+  expanded: new Set(),
+  modal: null,   // {type, data}
+  saveStatus: 'idle',
+};
+let saveTimer = null;
+
+function persist(listings) {
+  state.listings = listings;
+  saveData(listings);
+  state.saveStatus = 'saved';
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => { state.saveStatus = 'idle'; render(); }, 2000);
+  render();
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function todayISO() { return new Date().toISOString().split('T')[0]; }
+function fmtDate(d) { return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
+function getDays(d) { const a=new Date(d),b=new Date(); a.setHours(0,0,0,0); b.setHours(0,0,0,0); return Math.floor((b-a)/86400000); }
+function getNextDrop(l) {
+  if(!l.drops?.length) return null;
+  const t=new Date(); t.setHours(0,0,0,0);
+  const d=l.drops[0]; const dt=new Date(d.date); dt.setHours(0,0,0,0);
+  return {...d,daysUntil:Math.floor((dt-t)/86400000),overdue:dt<t};
+}
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+async function callClaude(prompt, maxTokens=1000) {
+  const res = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:MODEL,max_tokens:maxTokens,messages:[{role:'user',content:prompt}]})
+  });
+  const data = await res.json();
+  const text = data.content?.find(b=>b.type==='text')?.text||'';
+  return JSON.parse(text.replace(/```json|```/g,'').trim());
+}
+
+// ── Render helpers ────────────────────────────────────────────────────────────
+function badge(status) {
+  const c=STATUS_CFG[status]||STATUS_CFG.pending;
+  return `<span class="badge" style="background:${c.bg};color:${c.color}">${c.label}</span>`;
+}
+function infoBox(html,color='#0369a1',bg='#f0f9ff',border='#bae6fd',style='') {
+  return `<div class="info" style="background:${bg};border:1px solid ${border};color:${color};${style}">${html}</div>`;
+}
+function field(label,inputHtml,mb='margin-bottom:12px') {
+  return `<div class="field" style="${mb}"><div class="field-label">${label}</div>${inputHtml}</div>`;
+}
+
+// ── Banner ────────────────────────────────────────────────────────────────────
+function renderBanner() {
+  const active = state.listings.filter(l=>l.status==='active');
+  const drops = active.map(l=>{
+    const n=getNextDrop(l); if(!n) return null;
+    if(n.overdue||n.daysUntil<=3) return {l,n,type:n.overdue?'overdue':n.daysUntil===0?'today':'soon'};
+    return null;
+  }).filter(Boolean);
+  const relists = active.filter(l=>l.statsAdvice?.relistRecommended);
+  const allActions=[];
+  active.forEach(l=>{
+    (l.listingActions||[]).filter(a=>!(l.dismissedActions||[]).includes(a.id)).forEach(a=>allActions.push({l,a}));
+    (l.platforms||[]).filter(p=>p.recommended&&p.state==='pending'&&p.name!=='Vinted').forEach(p=>allActions.push({l,a:{id:`plat_${p.name}`,label:`List on ${p.name} — ${p.reason}`,type:'platform',impact:'medium',platformName:p.name}}));
+    if(l.status==='pending'){const v=(l.platforms||[]).find(p=>p.name==='Vinted');if(v?.state==='pending')allActions.push({l,a:{id:'plat_Vinted',label:'List on Vinted',type:'platform',impact:'high',platformName:'Vinted'}});}
+  });
+  const top5=[...allActions].sort((a,b)=>({high:3,medium:2,low:1}[b.a.impact]||1)-({high:3,medium:2,low:1}[a.a.impact]||1)).slice(0,5);
+
+  if(!drops.length&&!relists.length&&!top5.length) return `
+    <div class="banner" style="background:#f0fdf4;border:1.5px solid #bbf7d0;display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <span style="font-size:24px">✅</span>
+      <div><div style="font-weight:700;color:#166534;font-size:15px">Nothing to do today</div><div style="font-size:13px;color:#4b7a5c">All listings are on track.</div></div>
+    </div>`;
+
+  let html='';
+  if(drops.length) {
+    html+=`<div class="banner" style="background:#fff7ed;border:1.5px solid #fed7aa"><div class="banner-title" style="color:#9a3412">🔔 Price drops due (${drops.length})</div>`;
+    drops.forEach(({l,n,type})=>{
+      const bg=type==='overdue'?'#fef2f2':'#fffbeb',border=type==='overdue'?'#fca5a5':'#fde68a',color=type==='overdue'?'#dc2626':'#b45309';
+      const lbl=type==='overdue'?`⚠️ ${Math.abs(n.daysUntil)}d overdue`:type==='today'?'📌 Today':`⏰ In ${n.daysUntil}d`;
+      html+=`<div class="banner-item" style="background:${bg};border:1px solid ${border}">
+        <div><div class="banner-item-name">${esc(l.name)}</div><div class="banner-item-sub" style="color:${color}">${lbl} — drop to <strong>${n.price} Kč</strong></div></div>
+        ${l.link?`<a href="${esc(l.link)}" target="_blank" class="banner-open" style="background:#ea580c;color:#fff">Open →</a>`:''}
+      </div>`;
+    });
+    html+='</div>';
+  }
+  if(relists.length) {
+    html+=`<div class="banner" style="background:#fdf4ff;border:1.5px solid #e9d5ff"><div class="banner-title" style="color:#7e22ce">🔄 Consider relisting (${relists.length})</div>`;
+    relists.forEach(l=>{
+      html+=`<div class="banner-item" style="background:#f3e8ff;border:1px solid #d8b4fe">
+        <div><div class="banner-item-name">${esc(l.name)}</div><div class="banner-item-sub" style="color:#7e22ce">Delete and relist — free algorithm reset</div></div>
+        ${l.link?`<a href="${esc(l.link)}" target="_blank" class="banner-open" style="background:#7e22ce;color:#fff">Open →</a>`:''}
+      </div>`;
+    });
+    html+='</div>';
+  }
+  if(top5.length) {
+    html+=`<div class="banner" style="background:#f8fafc;border:1.5px solid #e2e8f0"><div class="banner-title" style="color:#1c1c1e">⚡ Top actions (${top5.length})</div>`;
+    top5.forEach(({l,a})=>{
+      const impBg=a.impact==='high'?'#fef2f2':a.impact==='medium'?'#fff7ed':'#f0fdf4';
+      const impColor=a.impact==='high'?'#dc2626':a.impact==='medium'?'#b45309':'#166534';
+      const icon=a.type==='photo'?'📸':a.type==='title'?'✏️':a.type==='platform'?'🏪':'💡';
+      html+=`<div class="action-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px">
+          <div><div class="action-listing">${esc(l.name)}</div><div class="action-label">${icon} ${esc(a.label)}</div></div>
+          <span class="action-impact" style="background:${impBg};color:${impColor}">${a.impact}</span>
+        </div>
+        <div class="action-btns">
+          <button class="action-btn" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0" onclick="bannerAction('${esc(l.id)}','${esc(a.id)}',true,'${esc(a.platformName||'')}')">✓ Done</button>
+          <button class="action-btn" style="background:#fef2f2;color:#dc2626;border:1px solid #fca5a5" onclick="bannerAction('${esc(l.id)}','${esc(a.id)}',false,'${esc(a.platformName||'')}')">✕ Won't do</button>
+        </div>
+      </div>`;
+    });
+    html+='</div>';
+  }
+  return html;
+}
+
+function bannerAction(lid,aid,done,platformName) {
+  const l=state.listings.find(x=>x.id===lid); if(!l) return;
+  let updated;
+  if(platformName) {
+    const extra=(platformName==='Vinted'&&done&&l.status==='pending')?{status:'active'}:{};
+    updated={...l,...extra,platforms:(l.platforms||[]).map(p=>p.name===platformName?{...p,state:done?'done':'wontdo'}:p)};
+  } else {
+    updated={...l,dismissedActions:[...(l.dismissedActions||[]),aid]};
+  }
+  persist(state.listings.map(x=>x.id===lid?updated:x));
+}
+window.bannerAction=bannerAction;
+
+// ── Cards ─────────────────────────────────────────────────────────────────────
+function renderCard(l) {
+  const days=getDays(l.dateListedRaw);
+  const drop=getNextDrop(l);
+  const expanded=state.expanded.has(l.id);
+  const donePlat=(l.platforms||[]).filter(p=>p.state==='done');
+
+  let dropHtml='';
+  if(drop&&l.status==='active') {
+    let bg='#f8fafc',color='#6b7280',label='';
+    if(drop.overdue){bg='#fef2f2';color='#dc2626';label=`⚠️ ${Math.abs(drop.daysUntil)}d overdue — drop to ${drop.price} Kč`;}
+    else if(drop.daysUntil===0){bg='#fff7ed';color='#b45309';label=`📌 Today — drop to ${drop.price} Kč`;}
+    else if(drop.daysUntil<=3){bg='#fff7ed';color='#b45309';label=`⏰ In ${drop.daysUntil}d — drop to ${drop.price} Kč`;}
+    else{label=`📉 In ${drop.daysUntil}d → ${drop.price} Kč`;}
+    if(label) dropHtml=`<div class="drop-pill" style="background:${bg}"><span class="drop-pill-label" style="color:${color}">${label}</span><span class="drop-pill-date">${fmtDate(drop.date)}</span></div>`;
+  }
+
+  const platTags=donePlat.map(p=>`<span class="plat-tag">${(PLATFORM_META[p.name]||{icon:'🏪'}).icon} ${p.name}</span>`).join('');
+  const viewsHtml=l.views!==null?`<span style="font-size:12px;color:#6b7280">👁${l.views} ❤️${l.likes}</span>`:'';
+
+  let bodyHtml='';
+  if(expanded) {
+    const pendRec=(l.platforms||[]).filter(p=>p.recommended&&p.state==='pending'&&p.name!=='Vinted');
+    const priceHistHtml=l.priceHistory?.length?`
+      <div style="background:#fff7ed;border-radius:10px;padding:10px 14px;margin-bottom:12px">
+        <div class="sec-title" style="color:#b45309">Price history</div>
+        ${l.priceHistory.map(h=>`<div style="font-size:12px;color:#92400e;margin-bottom:2px">📉 ${h.from} → ${h.to} Kč · ${fmtDate(h.date)}</div>`).join('')}
+      </div>`:'';
+    const dropsHtml=l.drops?.length?`
+      <div style="margin-bottom:12px">
+        <div class="sec-title">Scheduled drops</div>
+        ${l.drops.map(d=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f3f4f6;font-size:13px"><span>📉 ${esc(d.label)}</span><span><strong>${d.price} Kč</strong> · ${fmtDate(d.date)}</span></div>`).join('')}
+      </div>`:'';
+    const statsHtml=l.views!==null?`
+      <div style="background:#f0f9ff;border-radius:10px;padding:10px 14px;margin-bottom:12px">
+        <div class="sec-title" style="color:#0369a1">Stats${l.statsUpdatedAt?' · '+fmtDate(l.statsUpdatedAt):''}</div>
+        <div style="display:flex;gap:20px"><span style="font-size:14px">👁 <strong>${l.views}</strong></span><span style="font-size:14px">❤️ <strong>${l.likes}</strong></span></div>
+        ${l.statsAdvice?.tip?`<div style="font-size:12px;color:#0369a1;margin-top:6px">💡 ${esc(l.statsAdvice.tip)}</div>`:''}
+      </div>`:'';
+    const platHtml=(donePlat.length||pendRec.length)?`
+      <div style="margin-bottom:12px">
+        <div class="sec-title">Platforms</div>
+        ${donePlat.map(p=>{const m=PLATFORM_META[p.name]||{bg:'#f3f4f6',color:'#374151',icon:'🏪'};return`<div style="background:${m.bg};border-radius:8px;padding:7px 10px;display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:16px">${m.icon}</span><div><div style="font-weight:700;font-size:12px;color:${m.color}">${p.name} ✓</div><div style="font-size:11px;color:#6b7280">${esc(p.reason)}</div></div></div>`;}).join('')}
+        ${pendRec.map(p=>{const m=PLATFORM_META[p.name]||{bg:'#f3f4f6',color:'#374151',icon:'🏪'};return`<div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:7px 10px;display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><div style="display:flex;gap:8px"><span style="font-size:16px">${m.icon}</span><div><div style="font-weight:700;font-size:12px;color:#374151">${p.name}</div><div style="font-size:11px;color:#6b7280">${esc(p.reason)}</div></div></div><div style="display:flex;gap:4px"><button onclick="setPlatState('${esc(l.id)}','${esc(p.name)}','done')" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer">✓</button><button onclick="setPlatState('${esc(l.id)}','${esc(p.name)}','wontdo')" style="background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer">✕</button></div></div>`;}).join('')}
+      </div>`:'';
+    const notesHtml=l.notes?infoBox(`💡 ${esc(l.notes)}`,'#92400e','#fffbeb','#fde68a','margin-bottom:12px'):'';
+    const relistHtml=l.relistHistory?.length?`<div style="background:#f3e8ff;border-radius:8px;padding:8px 12px;margin-bottom:12px">${l.relistHistory.map(r=>`<div style="font-size:12px;color:#7e22ce">🔄 ${esc(r.note)}</div>`).join('')}</div>`:'';
+    const activeActions=l.status==='active'?`
+      <button class="btn" style="background:#f0f9ff;color:#0369a1;border:1.5px solid #bae6fd" onclick="openModal('stats','${esc(l.id)}')">📊 Stats</button>
+      <button class="btn" style="background:#fff7ed;color:#ea580c;border:1.5px solid #fed7aa" onclick="openModal('drop','${esc(l.id)}')">💸 Drop</button>
+      <button class="btn" style="background:#fdf4ff;color:#7e22ce;border:1.5px solid #e9d5ff" onclick="openModal('relist','${esc(l.id)}')">🔄 Relist</button>`:'';
+
+    bodyHtml=`<div class="card-body">
+      <div class="mini-stats">
+        <div class="mini-stat"><div class="mini-stat-label">Accept</div><div class="mini-stat-val" style="color:#2563eb">${l.acceptAbove} Kč</div></div>
+        <div class="mini-stat"><div class="mini-stat-label">Floor</div><div class="mini-stat-val" style="color:#dc2626">${l.minFloor} Kč</div></div>
+        <div class="mini-stat"><div class="mini-stat-label">Listed</div><div class="mini-stat-val" style="font-size:10px;color:#374151">${fmtDate(l.dateListedRaw)}</div></div>
+      </div>
+      ${priceHistHtml}${dropsHtml}${statsHtml}${platHtml}${notesHtml}${relistHtml}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px">
+        ${l.link?`<a href="${esc(l.link)}" target="_blank" style="background:#1c1c1e;color:#fff;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none">Vinted →</a>`:''}
+        ${activeActions}
+        <button class="btn btn-grey" onclick="openModal('edit','${esc(l.id)}')">✏️ Edit</button>
+        <select onchange="setStatus('${esc(l.id)}',this.value)" style="padding:8px 10px;border-radius:8px;border:1.5px solid #e5e7eb;font-size:13px;background:#fff;cursor:pointer">
+          ${Object.entries(STATUS_CFG).map(([v,c])=>`<option value="${v}"${l.status===v?' selected':''}>${c.label}</option>`).join('')}
+        </select>
+        <button class="btn" style="background:#fef2f2;color:#dc2626;border:1px solid #fca5a5" onclick="openModal('delete','${esc(l.id)}')">Delete</button>
+      </div>
+    </div>`;
+  }
+
+  return `<div class="card">
+    <div class="card-header" onclick="toggleCard('${esc(l.id)}')">
+      <div class="card-top">
+        <div style="flex:1">
+          <div class="card-name">${esc(l.name)}</div>
+          <div class="card-meta">${badge(l.status)}<span style="font-size:12px;color:#6b7280">${days}d</span>${viewsHtml}${platTags}</div>
+        </div>
+        <div class="card-price">
+          <div class="card-price-main">${l.listedPrice} Kč</div>
+          ${l.priceHistory?.length?`<div class="card-price-was">was ${l.priceHistory[0].from} Kč</div>`:''}
+          <div class="card-chevron">${expanded?'▲':'▼'}</div>
+        </div>
+      </div>
+      ${dropHtml}
+    </div>
+    ${bodyHtml}
+  </div>`;
+}
+
+window.toggleCard=id=>{state.expanded.has(id)?state.expanded.delete(id):state.expanded.add(id);render();};
+window.setStatus=(id,status)=>{persist(state.listings.map(l=>l.id===id?{...l,status}:l));};
+window.setPlatState=(lid,name,st)=>{
+  const l=state.listings.find(x=>x.id===lid); if(!l) return;
+  const extra=(name==='Vinted'&&st==='done'&&l.status==='pending')?{status:'active'}:{};
+  persist(state.listings.map(x=>x.id===lid?{...x,...extra,platforms:(x.platforms||[]).map(p=>p.name===name?{...p,state:st}:p)}:x));
+};
+
+// ── Main render ───────────────────────────────────────────────────────────────
+function render() {
+  const {listings,filter,platformFilter,sortBy,saveStatus}=state;
+  let filtered=[...listings];
+  if(filter!=='all') filtered=filtered.filter(l=>l.status===filter);
+  if(platformFilter!=='all') filtered=filtered.filter(l=>(l.platforms||[]).some(p=>p.name===platformFilter&&p.state==='done'));
+  if(sortBy==='price-asc') filtered.sort((a,b)=>a.listedPrice-b.listedPrice);
+  else if(sortBy==='price-desc') filtered.sort((a,b)=>b.listedPrice-a.listedPrice);
+  else if(sortBy==='date-asc') filtered.sort((a,b)=>new Date(a.dateListedRaw)-new Date(b.dateListedRaw));
+  else filtered.sort((a,b)=>new Date(b.dateListedRaw)-new Date(a.dateListedRaw));
+
+  const donePlats=[...new Set(listings.flatMap(l=>(l.platforms||[]).filter(p=>p.state==='done').map(p=>p.name)))];
+  const counts={active:listings.filter(l=>l.status==='active').length,sold:listings.filter(l=>l.status==='sold').length};
+  const todayStr=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const saveColor=saveStatus==='saved'?'#34d399':'#9ca3af';
+  const saveLabel=saveStatus==='saved'?'✓ Saved':'';
+
+  const cardsHtml=filtered.length===0?`<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">No listings here</div><div>Tap + to add your first item</div></div>`:filtered.map(renderCard).join('');
+  const platFilterHtml=donePlats.length?`<select class="mini-select" onchange="state.platformFilter=this.value;render()"><option value="all">All platforms</option>${donePlats.map(p=>`<option value="${p}"${platformFilter===p?' selected':''}>${p}</option>`).join('')}</select>`:'';
+
+  document.getElementById('app').innerHTML=`
+    <div class="header">
+      <div class="header-top">
+        <div class="logo"><span class="logo-drop">drop</span><span class="logo-date">date</span><span class="logo-sub">2.1 · skapida</span></div>
+        <div class="header-actions">
+          <span class="save-status" style="color:${saveColor}">${saveLabel}</span>
+          <button class="menu-btn" onclick="openModal('backup',null)">⋯</button>
+        </div>
+      </div>
+      <div class="header-date">${todayStr}</div>
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-val" style="color:#ea580c">${counts.active}</div><div class="stat-label">ACTIVE</div></div>
+        <div class="stat-box"><div class="stat-val" style="color:#34d399">${counts.sold}</div><div class="stat-label">SOLD</div></div>
+        <div class="stat-box"><div class="stat-val" style="color:#9ca3af">${listings.length}</div><div class="stat-label">TOTAL</div></div>
+      </div>
+    </div>
+    <div class="body">
+      ${renderBanner()}
+      <div class="pills">
+        ${[['all','All'],['active','Active'],['pending','Pending'],['sold','Sold'],['archived','Archived']].map(([v,l])=>`<button class="pill${filter===v?' active':''}" onclick="state.filter='${v}';render()">${l}</button>`).join('')}
+      </div>
+      <div class="sort-row">
+        <span class="sort-label">Sort:</span>
+        <select class="mini-select" onchange="state.sortBy=this.value;render()">
+          <option value="date-desc"${sortBy==='date-desc'?' selected':''}>Newest first</option>
+          <option value="date-asc"${sortBy==='date-asc'?' selected':''}>Oldest first</option>
+          <option value="price-desc"${sortBy==='price-desc'?' selected':''}>Price ↓</option>
+          <option value="price-asc"${sortBy==='price-asc'?' selected':''}>Price ↑</option>
+        </select>
+        ${platFilterHtml}
+      </div>
+      ${cardsHtml}
+    </div>
+    <button class="fab" onclick="openModal('add',null)">+</button>
+    ${renderModal()}
+  `;
+}
+
+// ── Modal system ──────────────────────────────────────────────────────────────
+function openModal(type,lid) { state.modal={type,lid,data:{},step:'main',err:'',loading:false,result:null}; render(); }
+function closeModal() { state.modal=null; render(); }
+window.openModal=openModal; window.closeModal=closeModal;
+
+function renderModal() {
+  const m=state.modal; if(!m) return '';
+  const l=m.lid?state.listings.find(x=>x.id===m.lid):null;
+  let content='';
+  if(m.type==='backup') content=renderBackupModal();
+  else if(m.type==='drop'&&l) content=renderDropModal(l);
+  else if(m.type==='relist'&&l) content=renderRelistModal(l);
+  else if(m.type==='stats'&&l) content=renderStatsModal(l);
+  else if(m.type==='edit'&&l) content=renderEditModal(l);
+  else if(m.type==='add') content=renderAddModal();
+  else if(m.type==='delete'&&l) content=renderDeleteModal(l);
+  else return '';
+  return `<div class="overlay" onclick="if(event.target===this)closeModal()">${content}</div>`;
+}
+
+function sheet(title,sub,body) {
+  return `<div class="sheet">
+    <div class="sheet-header">
+      <div><div class="sheet-title">${title}</div>${sub?`<div class="sheet-sub">${sub}</div>`:''}</div>
+      <button class="close-btn" onclick="closeModal()">✕</button>
+    </div>
+    ${body}
+  </div>`;
+}
+
+// ── Backup Modal ──────────────────────────────────────────────────────────────
+function renderBackupModal() {
+  const m=state.modal;
+  const json=JSON.stringify({data:state.listings,exportedAt:new Date().toISOString()},null,2);
+  if(m.step==='confirm') {
+    return sheet('Confirm import',null,`
+      ${infoBox(`Replace your current <strong>${state.listings.length}</strong> listing${state.listings.length!==1?'s':''} with <strong>${m.pendingData.length}</strong> from the backup? Cannot be undone.`,'#92400e','#fff7ed','#fed7aa','margin-bottom:20px')}
+      <div class="btn-row">
+        <button class="btn btn-grey" onclick="state.modal.step='main';render()">← Back</button>
+        <button class="btn btn-orange" onclick="confirmImport()">Import ${m.pendingData.length} ✓</button>
+      </div>`);
+  }
+  return sheet('💾 Backup',null,`
+    <div style="font-weight:700;font-size:13px;margin-bottom:6px">📤 Export your data</div>
+    <textarea readonly style="width:100%;min-height:80px;font-size:10px;font-family:monospace;padding:9px 12px;border-radius:8px;border:1.5px solid #e5e7eb;background:#f3f4f6;margin-bottom:8px;box-sizing:border-box;resize:none">${esc(json)}</textarea>
+    <button class="btn btn-dark btn-full" onclick="copyBackup()" style="margin-bottom:24px" id="copy-btn">Copy to clipboard</button>
+    <div style="font-weight:700;font-size:13px;margin-bottom:4px">📥 Import from backup</div>
+    <div style="font-size:12px;color:#6b7280;margin-bottom:8px">Paste your backup JSON below, then tap Import.</div>
+    <textarea id="import-ta" placeholder='{"data":[...]}' style="width:100%;min-height:120px;font-size:10px;font-family:monospace;padding:9px 12px;border-radius:8px;border:1.5px solid #e5e7eb;background:#fafafa;margin-bottom:8px;box-sizing:border-box;resize:vertical"></textarea>
+    ${m.err?`<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:10px 14px;color:#dc2626;font-size:13px;margin-bottom:8px">⚠️ ${m.err}</div>`:''}
+    <button class="btn btn-orange btn-full" style="padding:14px;font-size:14px" onclick="tryImport()">Import data →</button>
+  `);
+}
+
+window.copyBackup=function() {
+  const json=JSON.stringify({data:state.listings,exportedAt:new Date().toISOString()},null,2);
+  const btn=document.getElementById('copy-btn');
+  if(navigator.clipboard){navigator.clipboard.writeText(json).catch(()=>{});}
+  else{const el=document.createElement('textarea');el.value=json;el.style.position='fixed';el.style.opacity='0';document.body.appendChild(el);el.select();try{document.execCommand('copy');}catch{}document.body.removeChild(el);}
+  if(btn){btn.textContent='✓ Copied!';btn.style.background='#166534';setTimeout(()=>{if(btn){btn.textContent='Copy to clipboard';btn.style.background='#1c1c1e';}},2500);}
+};
+
+window.tryImport=function() {
+  const ta=document.getElementById('import-ta');
+  const raw=(ta?ta.value:'').trim();
+  if(!raw){state.modal.err='Nothing pasted yet.';render();return;}
+  let parsed;
+  try{parsed=JSON.parse(raw);}catch{state.modal.err='Invalid JSON — copy the full backup text and try again.';render();return;}
+  const data=parsed.data||parsed;
+  if(!Array.isArray(data)||data.length===0){state.modal.err='No listings found in this backup.';render();return;}
+  state.modal.step='confirm';state.modal.pendingData=data;render();
+};
+
+window.confirmImport=function() {
+  persist(state.modal.pendingData);
+  closeModal();
+};
+
+// ── Drop Modal ────────────────────────────────────────────────────────────────
+function renderDropModal(l) {
+  const m=state.modal;
+  const quickBtns=(l.drops||[]).map(d=>`<button class="btn btn-grey" style="font-size:12px;padding:6px 10px" onclick="document.getElementById('drop-price').value='${d.price}'">${esc(d.label)}: ${d.price} Kč</button>`).join('');
+  return sheet('💸 Drop price',`${l.name} · ${l.listedPrice} Kč now`,`
+    ${field('New price (Kč)',`<input id="drop-price" type="number" value="${m.data.price||''}" placeholder="${l.drops[0]?.price||399}" style="font-size:22px;text-align:center">`)}
+    ${field('Date of drop',`<input id="drop-date" type="date" value="${m.data.date||todayISO()}">`)}
+    ${quickBtns?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">${quickBtns}</div>`:''}
+    ${m.err?`<div style="color:#dc2626;font-size:13px;margin-bottom:10px">${m.err}</div>`:''}
+    <div class="btn-row">
+      <button class="btn btn-grey" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-orange" onclick="confirmDrop('${esc(l.id)}')">Confirm ✓</button>
+    </div>
+  `);
+}
+window.confirmDrop=function(lid) {
+  const l=state.listings.find(x=>x.id===lid);
+  const p=parseInt(document.getElementById('drop-price').value);
+  const date=document.getElementById('drop-date').value;
+  if(!p||p>=l.listedPrice){state.modal.err='Must be lower than current price.';render();return;}
+  if(p<l.minFloor){state.modal.err=`Below your floor of ${l.minFloor} Kč.`;render();return;}
+  persist(state.listings.map(x=>x.id===lid?{...x,listedPrice:p,drops:(x.drops||[]).filter(d=>d.price!==p),priceHistory:[...(x.priceHistory||[]),{from:x.listedPrice,to:p,date}]}:x));
+  closeModal();
+};
+
+// ── Relist Modal ──────────────────────────────────────────────────────────────
+function renderRelistModal(l) {
+  return sheet('🔄 Relist',l.name,`
+    ${infoBox('Resets views, likes and stats. Logs a relist note. Delete the old Vinted listing first.','#7e22ce','#fdf4ff','#e9d5ff','margin-bottom:16px')}
+    ${field('New Vinted link (optional)',`<input id="relist-link" type="url" value="${esc(l.link||'')}" placeholder="https://www.vinted.cz/items/...">`,'')}
+    <div style="height:20px"></div>
+    <div class="btn-row">
+      <button class="btn btn-grey" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-purple" onclick="confirmRelist('${esc(l.id)}')">Confirm ✓</button>
+    </div>
+  `);
+}
+window.confirmRelist=function(lid) {
+  const l=state.listings.find(x=>x.id===lid);
+  const link=document.getElementById('relist-link').value||l.link;
+  const today=todayISO();
+  const note=`Relisted ${fmtDate(today)} (was ${l.listedPrice} Kč since ${fmtDate(l.dateListedRaw)})`;
+  persist(state.listings.map(x=>x.id===lid?{...x,link,dateListedRaw:today,views:null,likes:null,statsUpdatedAt:null,statsAdvice:null,dismissedActions:[],relistHistory:[...(x.relistHistory||[]),{date:today,price:x.listedPrice,originalLink:x.link,note}],notes:x.notes?x.notes+'\n'+note:note}:x));
+  closeModal();
+};
+
+// ── Stats Modal ───────────────────────────────────────────────────────────────
+function renderStatsModal(l) {
+  const m=state.modal;
+  if(m.loading) return sheet('📊 Stats',l.name,`<div style="text-align:center;padding:40px 0"><div style="font-size:36px;margin-bottom:12px">🔍</div><div style="font-weight:700">Analysing…</div></div>`);
+  if(m.result) {
+    const r=m.result;
+    const uStyle={high:{color:'#dc2626',bg:'#fef2f2',border:'#fca5a5'},medium:{color:'#b45309',bg:'#fff7ed',border:'#fed7aa'},low:{color:'#166534',bg:'#f0fdf4',border:'#bbf7d0'}}[r.urgency]||{color:'#166534',bg:'#f0fdf4',border:'#bbf7d0'};
+    const icon=r.urgency==='high'?'🚨':r.urgency==='medium'?'⚠️':'✅';
+    return sheet('📊 Stats',l.name,`
+      <div style="background:${uStyle.bg};border:1.5px solid ${uStyle.border};border-radius:12px;padding:14px 16px;margin-bottom:12px">
+        <div style="font-weight:800;font-size:15px;color:${uStyle.color};margin-bottom:6px">${icon} ${esc(r.actionLabel)}</div>
+        <div style="font-size:13px;color:#374151">${esc(r.diagnosis)}</div>
+      </div>
+      ${r.relistRecommended?infoBox(`<strong>🔄 Relist (free)</strong><br>${esc(r.relistReason)}`,'#7e22ce','#fdf4ff','#e9d5ff','margin-bottom:12px'):''}
+      ${r.tip?infoBox(`💡 ${esc(r.tip)}`,'#166534','#f0fdf4','#bbf7d0','margin-bottom:12px'):''}
+      <div class="btn-row">
+        <button class="btn btn-grey" onclick="closeModal()">Close</button>
+        <button class="btn btn-dark" onclick="applyStats('${esc(l.id)}')">Apply & save ✓</button>
+      </div>
+    `);
+  }
+  return sheet('📊 Stats',l.name,`
+    ${infoBox('Open Vinted → tap your listing → check <strong>views</strong> and <strong>favourites</strong>','#0369a1','#f0f9ff','#bae6fd','margin-bottom:16px')}
+    <div class="field-row">
+      <div class="field" style="text-align:center"><div class="field-label">👁 Views</div><input id="stat-views" type="number" min="0" value="${l.views??''}" style="text-align:center;font-size:22px"></div>
+      <div class="field" style="text-align:center"><div class="field-label">❤️ Likes</div><input id="stat-likes" type="number" min="0" value="${l.likes??''}" style="text-align:center;font-size:22px"></div>
+    </div>
+    ${m.err?`<div style="color:#dc2626;font-size:13px;margin-bottom:12px">${m.err}</div>`:''}
+    <button class="btn btn-dark btn-full" style="padding:14px" onclick="runStats('${esc(l.id)}')">✨ Analyse performance</button>
+  `);
+}
+window.runStats=async function(lid) {
+  const l=state.listings.find(x=>x.id===lid);
+  const views=document.getElementById('stat-views').value;
+  const likes=document.getElementById('stat-likes').value;
+  if(views===''||likes===''){state.modal.err='Enter both values.';render();return;}
+  state.modal.loading=true;render();
+  try {
+    const res=await callClaude(`Vinted CZ selling expert. Analyse listing performance.
+Item: ${l.name}, Price: ${l.listedPrice} Kč, Days listed: ${getDays(l.dateListedRaw)}, Views: ${views}, Likes: ${likes}
+Drops: ${JSON.stringify(l.drops)}, Floor: ${l.minFloor} Kč
+RULES: Never suggest bumping. Relisting is FREE. Topping ~100 Kč.
+Respond ONLY valid JSON: {"diagnosis":"one sentence","actionLabel":"short label","urgency":"high|medium|low","relistRecommended":false,"relistReason":"","updatedDrops":[{"date":"YYYY-MM-DD","price":0,"label":""}],"updatedAcceptAbove":0,"tip":"one tip"}`,800);
+    state.modal.loading=false;state.modal.result=res;state.modal.data={views,likes};
+  } catch {state.modal.loading=false;state.modal.err='AI unavailable.';}
+  render();
+};
+window.applyStats=function(lid) {
+  const r=state.modal.result;const d=state.modal.data;
+  persist(state.listings.map(x=>x.id===lid?{...x,views:parseInt(d.views),likes:parseInt(d.likes),statsUpdatedAt:todayISO(),drops:r.updatedDrops||x.drops,acceptAbove:r.updatedAcceptAbove||x.acceptAbove,statsAdvice:r}:x));
+  closeModal();
+};
+
+// ── Edit Modal ────────────────────────────────────────────────────────────────
+function renderEditModal(l) {
+  const conds=['New with tags','New without tags','Very Good','Good','Fair'];
+  return sheet('✏️ Edit listing',l.name,`
+    ${field('Item name',`<input id="e-name" value="${esc(l.name)}">`)}
+    ${field('Vinted link',`<input id="e-link" type="url" value="${esc(l.link||'')}">`)}
+    ${field('Category',`<input id="e-cat" value="${esc(l.category||'')}">`)}
+    <div class="field-row">
+      ${field('Condition',`<select id="e-cond">${conds.map(c=>`<option${l.condition===c?' selected':''}>${c}</option>`).join('')}</select>`,'margin-bottom:0')}
+      ${field('Date listed',`<input id="e-date" type="date" value="${esc(l.dateListedRaw)}">`,'margin-bottom:0')}
+    </div>
+    <div class="field-row" style="margin-top:12px">
+      ${field('Price (Kč)',`<input id="e-price" type="number" value="${l.listedPrice}">`,'margin-bottom:0')}
+      ${field('Accept above (Kč)',`<input id="e-accept" type="number" value="${l.acceptAbove}">`,'margin-bottom:0')}
+    </div>
+    <div class="field-row" style="margin-top:12px">
+      ${field('Floor (Kč)',`<input id="e-floor" type="number" value="${l.minFloor}">`,'margin-bottom:0')}
+      ${field('Status',`<select id="e-status">${Object.entries(STATUS_CFG).map(([v,c])=>`<option value="${v}"${l.status===v?' selected':''}>${c.label}</option>`).join('')}</select>`,'margin-bottom:0')}
+    </div>
+    <div style="margin-top:12px">${field('Notes',`<textarea id="e-notes">${esc(l.notes||'')}</textarea>`)}</div>
+    ${field('Next drop date',`<input id="e-drop-date" type="date" value="${esc(l.drops[0]?.date||'')}">`)}
+    ${field('Next drop price (Kč)',`<input id="e-drop-price" type="number" value="${l.drops[0]?.price||''}">`,'')}
+    <div style="height:20px"></div>
+    <div class="btn-row">
+      <button class="btn btn-grey" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-dark" onclick="confirmEdit('${esc(l.id)}')">Save ✓</button>
+    </div>
+  `);
+}
+window.confirmEdit=function(lid) {
+  const l=state.listings.find(x=>x.id===lid);
+  const g=id=>document.getElementById(id)?.value||'';
+  let drops=[...(l.drops||[])];
+  const dd=g('e-drop-date'),dp=g('e-drop-price');
+  if(drops.length&&(dd||dp)) drops[0]={...drops[0],date:dd||drops[0].date,price:parseInt(dp)||drops[0].price};
+  else if(!drops.length&&dd&&dp) drops=[{date:dd,price:parseInt(dp),label:'Drop'}];
+  persist(state.listings.map(x=>x.id===lid?{...x,name:g('e-name')||x.name,link:g('e-link'),category:g('e-cat'),condition:g('e-cond'),dateListedRaw:g('e-date')||x.dateListedRaw,listedPrice:parseInt(g('e-price'))||x.listedPrice,acceptAbove:parseInt(g('e-accept'))||x.acceptAbove,minFloor:parseInt(g('e-floor'))||x.minFloor,status:g('e-status'),notes:g('e-notes'),drops}:x));
+  closeModal();
+};
+
+// ── Add Modal ─────────────────────────────────────────────────────────────────
+function renderAddModal() {
+  const m=state.modal;
+  if(m.step==='result'&&m.result) {
+    const r=m.result;
+    return sheet('✨ AI Strategy',null,`
+      <div style="background:${r.worthListing?'#f0fdf4':'#fef2f2'};border:1.5px solid ${r.worthListing?'#bbf7d0':'#fca5a5'};border-radius:12px;padding:14px 16px;margin-bottom:14px">
+        <div style="font-weight:800;font-size:15px;color:${r.worthListing?'#166534':'#dc2626'};margin-bottom:4px">${r.worthListing?'✅ Worth listing':'⚠️ Think carefully'}</div>
+        <div style="font-size:13px;color:#374151">${esc(r.worthListingReason)}</div>
+      </div>
+      <div style="background:#f8fafc;border-radius:12px;padding:14px 16px;margin-bottom:14px">
+        <div style="font-weight:700;font-size:11px;color:#6b7280;margin-bottom:10px;letter-spacing:.5px;text-transform:uppercase">💰 Price plan</div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px"><span>📌 List at</span><strong>${esc(m.data.listedPrice)} Kč</strong></div>
+        ${(r.drops||[]).map(d=>`<div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px"><span>📉 ${esc(d.label)} · ${fmtDate(d.date)}</span><strong style="color:#ea580c">${d.price} Kč</strong></div>`).join('')}
+        <div style="border-top:1px solid #e5e7eb;margin-top:8px;padding-top:8px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:13px"><span>🤝 Accept above</span><strong style="color:#2563eb">${r.acceptAbove} Kč</strong></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px"><span>🛑 Walk away below</span><strong style="color:#dc2626">${r.minFloor} Kč</strong></div>
+        </div>
+      </div>
+      ${r.notes?infoBox(`💡 ${esc(r.notes)}`,'#92400e','#fffbeb','#fde68a','margin-bottom:14px'):''}
+      <div class="btn-row">
+        <button class="btn btn-grey" onclick="state.modal.step='main';render()">← Edit</button>
+        <button class="btn btn-dark" onclick="confirmAdd(true)">Save ✓</button>
+      </div>
+    `);
+  }
+  const d=m.data||{};
+  const conds=['New with tags','New without tags','Very Good','Good','Fair'];
+  const cond=d.condition||'Very Good';
+  return sheet('➕ Add listing','Fill manually or import from a Vinted link',`
+    ${infoBox(`<div style="font-weight:700;font-size:11px;color:#0369a1;margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase">📎 Import from Vinted link</div><div style="display:flex;gap:8px"><input id="add-url" type="url" value="${esc(d.importUrl||'')}" placeholder="https://www.vinted.cz/items/…" style="flex:1;padding:9px 12px;border-radius:8px;border:1.5px solid #e5e7eb;font-size:13px;outline:none;background:#fff"><button class="btn" style="background:#0369a1;color:#fff;white-space:nowrap;padding:9px 14px" onclick="importFromUrl()">${m.loading?'…':'Import'}</button></div><div style="font-size:11px;color:#6b7280;margin-top:6px">AI reads the slug — fill manually if AI is unavailable</div>`,'#0369a1','#f0f9ff','#bae6fd','margin-bottom:14px')}
+    ${field('Item name *',`<input id="add-name" value="${esc(d.name||'')}" placeholder="e.g. Samsonite crossbody bag">`)}
+    ${field('Vinted link',`<input id="add-link" type="url" value="${esc(d.link||'')}" placeholder="https://www.vinted.cz/items/…">`)}
+    ${field('Category',`<input id="add-cat" value="${esc(d.category||'')}" placeholder="e.g. Bags, Books, Electronics">`)}
+    <div class="field-row">
+      ${field('Condition',`<select id="add-cond">${conds.map(c=>`<option${cond===c?' selected':''}>${c}</option>`).join('')}</select>`,'margin-bottom:0')}
+      ${field('Date listed',`<input id="add-date" type="date" value="${esc(d.dateListedRaw||todayISO())}">`,'margin-bottom:0')}
+    </div>
+    <div class="field-row" style="margin-top:12px">
+      ${field('Listed price (Kč) *',`<input id="add-price" type="number" value="${esc(d.listedPrice||'')}" placeholder="499">`,'margin-bottom:0')}
+      ${field('Original price (Kč)',`<input id="add-orig" type="number" value="${esc(d.originalPrice||'')}" placeholder="900">`,'margin-bottom:0')}
+    </div>
+    <div style="margin-top:12px">${field('Status',`<select id="add-status"><option value="active"${(d.status||'active')==='active'?' selected':''}>Active — on Vinted</option><option value="pending"${d.status==='pending'?' selected':''}>Pending — not yet listed</option><option value="sold"${d.status==='sold'?' selected':''}>Sold</option><option value="archived"${d.status==='archived'?' selected':''}>Archived</option></select>`)}</div>
+    ${field('Notes',`<textarea id="add-notes" placeholder="Condition details…">${esc(d.notes||'')}</textarea>`,'margin-bottom:16px')}
+    ${m.err?`<div style="color:#dc2626;font-size:13px;margin-bottom:10px">${m.err}</div>`:''}
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn btn-dark btn-full" style="padding:14px;font-size:15px" onclick="generateStrategy()" ${m.loading?'disabled':''}>
+        ${m.loading?'🤔 Generating…':'✨ Generate AI strategy'}
+      </button>
+      <button class="btn btn-grey btn-full" onclick="confirmAdd(false)">Save without AI →</button>
+    </div>
+  `);
+}
+
+function gatherAddForm() {
+  const g=id=>document.getElementById(id)?.value||'';
+  return {name:g('add-name'),link:g('add-link'),category:g('add-cat'),condition:g('add-cond'),dateListedRaw:g('add-date')||todayISO(),listedPrice:g('add-price'),originalPrice:g('add-orig'),status:g('add-status')||'active',notes:g('add-notes'),importUrl:g('add-url')};
+}
+
+window.importFromUrl=async function() {
+  const d=gatherAddForm();
+  if(!d.importUrl) return;
+  state.modal.loading=true;state.modal.data=d;render();
+  try {
+    const slug=d.importUrl.split('/items/')[1]||d.importUrl;
+    const r=await callClaude(`From Vinted URL slug: "${slug}" infer item. Respond ONLY valid JSON: {"name":"English name","category":"category","condition":"Very Good","notes":"brief note"}`,300);
+    state.modal.data={...d,name:r.name||d.name,category:r.category||d.category,condition:r.condition||d.condition,link:d.importUrl,notes:r.notes||d.notes};
+  } catch {}
+  state.modal.loading=false;render();
+};
+
+window.generateStrategy=async function() {
+  const d=gatherAddForm();
+  if(!d.name||!d.listedPrice){state.modal.err='Fill in item name and price first.';state.modal.data=d;render();return;}
+  state.modal.loading=true;state.modal.err='';state.modal.data=d;render();
+  try {
+    const res=await callClaude(`Czech second-hand expert. Generate full selling strategy.
+Item: ${d.name}, Category: ${d.category}, Condition: ${d.condition}, Price: ${d.listedPrice} Kč, Original: ${d.originalPrice||'unknown'} Kč, Listed: ${d.dateListedRaw}, Notes: ${d.notes}
+RULES: NEVER suggest bumping. Relisting FREE. Only non-Vinted platforms if clearly justified. Facebook Marketplace only niche communities. eBay only internationally rare/branded.
+Respond ONLY valid JSON: {"drops":[{"date":"YYYY-MM-DD","price":0,"label":"Week 3 drop"},{"date":"YYYY-MM-DD","price":0,"label":"Week 6 drop"}],"acceptAbove":0,"minFloor":0,"notes":"tip","worthListing":true,"worthListingReason":"one sentence","platforms":[{"name":"Vinted","recommended":true,"reason":""},{"name":"Facebook Marketplace","recommended":false,"reason":""},{"name":"eBay","recommended":false,"reason":""},{"name":"Aukro","recommended":false,"reason":""},{"name":"Bazoš","recommended":false,"reason":""}],"listingActions":[{"id":"a1","label":"tip","type":"photo","impact":"high"}]}
+Drop dates: 3 and 6 weeks from ${d.dateListedRaw}. Drop 15-20% each. acceptAbove=85%. minFloor=60%. Integers only.`,1100);
+    state.modal.loading=false;state.modal.result=res;state.modal.step='result';
+  } catch {state.modal.loading=false;state.modal.err='AI unavailable. Use "Save without AI".';}
+  render();
+};
+
+window.confirmAdd=function(withAI) {
+  const d=state.modal.data||gatherAddForm();
+  const r=withAI?state.modal.result:null;
+  const p=parseInt(d.listedPrice);
+  if(!d.name||!p){state.modal.err='Name and price are required.';state.modal.step='main';render();return;}
+  const item={
+    id:Date.now().toString(),...d,listedPrice:p,priceHistory:[],
+    drops:r?.drops||[],acceptAbove:r?.acceptAbove||Math.round(p*.85),minFloor:r?.minFloor||Math.round(p*.6),
+    notes:r?.notes||d.notes||'',
+    platforms:r?.platforms?r.platforms.map(pl=>({...pl,state:pl.name==='Vinted'&&d.status==='active'?'done':'pending'})):Object.keys(PLATFORM_META).map(name=>({name,recommended:name==='Vinted',reason:'',state:name==='Vinted'&&d.status==='active'?'done':'pending'})),
+    listingActions:r?.listingActions||[],dismissedActions:[],
+    views:null,likes:null,statsUpdatedAt:null,statsAdvice:null,relistHistory:[],
+  };
+  persist([item,...state.listings]);
+  closeModal();
+};
+
+// ── Delete Modal ──────────────────────────────────────────────────────────────
+function renderDeleteModal(l) {
+  return sheet('Delete listing?',l.name,`
+    ${infoBox('This cannot be undone.','#dc2626','#fef2f2','#fca5a5','margin-bottom:20px')}
+    <div class="btn-row">
+      <button class="btn btn-grey" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-red" onclick="confirmDelete('${esc(l.id)}')">Delete ✕</button>
+    </div>
+  `);
+}
+window.confirmDelete=function(lid) {
+  persist(state.listings.filter(x=>x.id!==lid));
+  closeModal();
+};
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
