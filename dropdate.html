@@ -162,7 +162,7 @@ let state = {
   platformFilter: 'all',
   sortBy: 'date-desc',
   expanded: new Set(),
-  modal: null,   // {type, data}
+  modal: null,
   saveStatus: 'idle',
 };
 let saveTimer = null;
@@ -406,7 +406,25 @@ function render() {
   const saveColor=saveStatus==='saved'?'#34d399':'#9ca3af';
   const saveLabel=saveStatus==='saved'?'✓ Saved':'';
 
-  const cardsHtml=filtered.length===0?`<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">No listings here</div><div>Tap + to add your first item</div></div>`:filtered.map(renderCard).join('');
+  const noListings = listings.length === 0;
+  const cardsHtml=filtered.length===0?(noListings?`
+    <div style="text-align:center;padding:40px 20px 20px">
+      <div style="font-size:44px;margin-bottom:16px">👋</div>
+      <div style="font-weight:800;font-size:18px;color:#1c1c1e;margin-bottom:8px">Welcome to dropdate</div>
+      <div style="font-size:14px;color:#6b7280;line-height:1.6;margin-bottom:24px">A tracker for your second-hand listings.<br>Know when to drop prices, when to relist,<br>and what to fix to sell faster.</div>
+      <div style="background:#fff;border-radius:14px;border:1.5px solid #e5e7eb;padding:20px;text-align:left;margin-bottom:16px">
+        <div style="font-weight:700;font-size:13px;color:#1c1c1e;margin-bottom:12px">Getting started</div>
+        <div style="font-size:13px;color:#374151;display:flex;flex-direction:column;gap:10px">
+          <div>➕ <strong>Tap +</strong> to add your first listing — paste a Vinted link or fill in manually</div>
+          <div>📉 <strong>Schedule price drops</strong> — the app reminds you when they're due</div>
+          <div>🔄 <strong>Log relists</strong> — free on Vinted, resets algorithm visibility</div>
+          <div>📊 <strong>Update stats</strong> — enter views and likes to get selling advice</div>
+          <div>💾 <strong>Back up regularly</strong> — tap ⋯ and copy your data to Notes or email</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:#9ca3af;line-height:1.5">Your data stays in this browser only.<br>Export a backup after every session to be safe.</div>
+    </div>`
+  :`<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">No listings here</div><div>Tap + to add your first item</div></div>`):filtered.map(renderCard).join('');
   const platFilterHtml=donePlats.length?`<select class="mini-select" onchange="state.platformFilter=this.value;render()"><option value="all">All platforms</option>${donePlats.map(p=>`<option value="${p}"${platformFilter===p?' selected':''}>${p}</option>`).join('')}</select>`:'';
 
   document.getElementById('app').innerHTML=`
@@ -498,6 +516,7 @@ function renderBackupModal() {
     <textarea id="import-ta" placeholder='{"data":[...]}' style="width:100%;min-height:120px;font-size:10px;font-family:monospace;padding:9px 12px;border-radius:8px;border:1.5px solid #e5e7eb;background:#fafafa;margin-bottom:8px;box-sizing:border-box;resize:vertical"></textarea>
     ${m.err?`<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:10px 14px;color:#dc2626;font-size:13px;margin-bottom:8px">⚠️ ${m.err}</div>`:''}
     <button class="btn btn-orange btn-full" style="padding:14px;font-size:14px" onclick="tryImport()">Import data →</button>
+
   `);
 }
 
@@ -552,22 +571,76 @@ window.confirmDrop=function(lid) {
 
 // ── Relist Modal ──────────────────────────────────────────────────────────────
 function renderRelistModal(l) {
+  const m=state.modal;
+  const newPrice=m.data.newPrice!==undefined?m.data.newPrice:l.listedPrice;
+  const priceChanged=parseInt(newPrice)&&parseInt(newPrice)!==l.listedPrice;
+  // Compute new drops from new price if price changed
+  const previewDrops=priceChanged?computeDrops(parseInt(newPrice),todayISO()):(l.drops||[]);
+  const dropsPreview=previewDrops.length?`
+    <div style="background:#f8fafc;border-radius:10px;padding:10px 14px;margin-bottom:14px">
+      <div class="sec-title" style="margin-bottom:8px">New drop schedule</div>
+      ${previewDrops.map(d=>`<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>📉 ${esc(d.label)}</span><span><strong>${d.price} Kč</strong> · ${fmtDate(d.date)}</span></div>`).join('')}
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:8px;padding-top:8px;border-top:1px solid #e5e7eb">
+        <span>🤝 Accept above</span><span style="font-weight:700;color:#2563eb">${Math.round(parseInt(newPrice)*.85)} Kč</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:4px">
+        <span>🛑 Floor</span><span style="font-weight:700;color:#dc2626">${Math.round(parseInt(newPrice)*.6)} Kč</span>
+      </div>
+    </div>`:'';
   return sheet('🔄 Relist',l.name,`
-    ${infoBox('Resets views, likes and stats. Logs a relist note. Delete the old Vinted listing first.','#7e22ce','#fdf4ff','#e9d5ff','margin-bottom:16px')}
+    ${infoBox('Resets views, likes and stats. Delete the old Vinted listing first — relisting is free.','#7e22ce','#fdf4ff','#e9d5ff','margin-bottom:16px')}
+    <div class="field-row" style="margin-bottom:12px">
+      <div class="field" style="margin-bottom:0">
+        <div class="field-label">New price (Kč)</div>
+        <input id="relist-price" type="number" value="${esc(newPrice)}" style="width:100%;padding:9px 12px;border-radius:8px;border:1.5px solid ${priceChanged?'#86efac':'#e5e7eb'};font-size:18px;text-align:center;font-family:inherit;outline:none;background:#fafafa;box-sizing:border-box"
+          oninput="state.modal.data.newPrice=this.value;render()">
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <div class="field-label">Was</div>
+        <div style="padding:9px 12px;border-radius:8px;border:1.5px solid #f3f4f6;font-size:18px;text-align:center;background:#f3f4f6;color:#9ca3af;font-weight:700">${l.listedPrice} Kč</div>
+      </div>
+    </div>
+    ${priceChanged?dropsPreview:''}
     ${field('New Vinted link (optional)',`<input id="relist-link" type="url" value="${esc(l.link||'')}" placeholder="https://www.vinted.cz/items/...">`,'')}
     <div style="height:20px"></div>
+    ${m.err?`<div style="color:#dc2626;font-size:13px;margin-bottom:10px">${m.err}</div>`:''}
     <div class="btn-row">
       <button class="btn btn-grey" onclick="closeModal()">Cancel</button>
       <button class="btn btn-purple" onclick="confirmRelist('${esc(l.id)}')">Confirm ✓</button>
     </div>
   `);
 }
+
+function computeDrops(price, fromDate) {
+  const d1=new Date(fromDate); d1.setDate(d1.getDate()+21);
+  const d2=new Date(fromDate); d2.setDate(d2.getDate()+42);
+  const d3=new Date(fromDate); d3.setDate(d3.getDate()+63);
+  const p1=Math.round(price*.82); const p2=Math.round(price*.65); const p3=Math.round(price*.55);
+  return [
+    {date:d1.toISOString().split('T')[0],price:p1,label:'Week 3 drop'},
+    {date:d2.toISOString().split('T')[0],price:p2,label:'Week 6 drop'},
+    {date:d3.toISOString().split('T')[0],price:p3,label:'Week 9 drop'},
+  ];
+}
+
 window.confirmRelist=function(lid) {
   const l=state.listings.find(x=>x.id===lid);
   const link=document.getElementById('relist-link').value||l.link;
+  const newPrice=parseInt(document.getElementById('relist-price').value)||l.listedPrice;
+  const priceChanged=newPrice!==l.listedPrice;
   const today=todayISO();
-  const note=`Relisted ${fmtDate(today)} (was ${l.listedPrice} Kč since ${fmtDate(l.dateListedRaw)})`;
-  persist(state.listings.map(x=>x.id===lid?{...x,link,dateListedRaw:today,views:null,likes:null,statsUpdatedAt:null,statsAdvice:null,dismissedActions:[],relistHistory:[...(x.relistHistory||[]),{date:today,price:x.listedPrice,originalLink:x.link,note}],notes:x.notes?x.notes+'\n'+note:note}:x));
+  const note=`Relisted ${fmtDate(today)} at ${newPrice} Kč (was ${l.listedPrice} Kč since ${fmtDate(l.dateListedRaw)})`;
+  const newDrops=priceChanged?computeDrops(newPrice,today):(l.drops||[]);
+  const newAccept=priceChanged?Math.round(newPrice*.85):l.acceptAbove;
+  const newFloor=priceChanged?Math.round(newPrice*.6):l.minFloor;
+  persist(state.listings.map(x=>x.id===lid?{...x,
+    link,listedPrice:newPrice,dateListedRaw:today,
+    drops:newDrops,acceptAbove:newAccept,minFloor:newFloor,
+    priceHistory:priceChanged?[...(x.priceHistory||[]),{from:x.listedPrice,to:newPrice,date:today}]:x.priceHistory,
+    views:null,likes:null,statsUpdatedAt:null,statsAdvice:null,dismissedActions:[],
+    relistHistory:[...(x.relistHistory||[]),{date:today,price:newPrice,originalLink:x.link,note}],
+    notes:x.notes?x.notes+'\n'+note:note
+  }:x));
   closeModal();
 };
 
@@ -695,7 +768,7 @@ function renderAddModal() {
   const cond=d.condition||'Very Good';
   return sheet('➕ Add listing','Fill manually or import from a Vinted link',`
     ${infoBox(`<div style="font-weight:700;font-size:11px;color:#0369a1;margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase">📎 Import from Vinted link</div><div style="display:flex;gap:8px"><input id="add-url" type="url" value="${esc(d.importUrl||'')}" placeholder="https://www.vinted.cz/items/…" style="flex:1;padding:9px 12px;border-radius:8px;border:1.5px solid #e5e7eb;font-size:13px;outline:none;background:#fff"><button class="btn" style="background:#0369a1;color:#fff;white-space:nowrap;padding:9px 14px" onclick="importFromUrl()">${m.loading?'…':'Import'}</button></div><div style="font-size:11px;color:#6b7280;margin-top:6px">AI reads the slug — fill manually if AI is unavailable</div>`,'#0369a1','#f0f9ff','#bae6fd','margin-bottom:14px')}
-    ${field('Item name *',`<input id="add-name" value="${esc(d.name||'')}" placeholder="e.g. Samsonite crossbody bag">`)}
+    ${field('Item name *',`<input id="add-name" value="${esc(d.name||'')}" placeholder="e.g. GoPro Hero 10, Adidas jacket…">`)}
     ${field('Vinted link',`<input id="add-link" type="url" value="${esc(d.link||'')}" placeholder="https://www.vinted.cz/items/…">`)}
     ${field('Category',`<input id="add-cat" value="${esc(d.category||'')}" placeholder="e.g. Bags, Books, Electronics">`)}
     <div class="field-row">
